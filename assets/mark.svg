@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-118 -52 236 202" width="236" height="202"><g transform="translate(0 30) rotate(-28 0 82) scale(0.86)"><g>
+        <path d="M20 -76 H40 L48 -62 V-6 H20 Z" fill="#BFC4C9"></path>
+        <path d="M-48 -62 L-40 -76 H20 V-6 H-48 Z" fill="#FFFFFF"></path>
+        <path d="M-40 -76 Q0 -94 40 -76 Z" fill="#FFFFFF"></path>
+        <rect x="-48" y="-60" width="96" height="6" fill="#D4AF37"></rect>
+        <rect x="-48" y="-48" width="96" height="6" fill="#D4AF37"></rect>
+        <rect x="-48" y="-37" width="96" height="4" fill="#111315"></rect>
+        <path d="M-44 -6 L-36 26 H18 V-6 Z" fill="#FFFFFF"></path>
+        <path d="M18 -6 H44 L36 26 H18 Z" fill="#BFC4C9"></path>
+        <circle cx="0" cy="6" r="13" fill="#BFC4C9"></circle>
+        <circle cx="0" cy="6" r="6" fill="#111315"></circle>
+        <path d="M-13 12 H13 L20 70 H-20 Z" fill="#FFFFFF"></path>
+        <path d="M-5 20 H5 L8 62 H-8 Z" fill="#BFC4C9"></path>
+        <circle cx="0" cy="82" r="24" fill="#FFFFFF"></circle>
+        <circle cx="0" cy="82" r="11" fill="#111315"></circle>
+        <circle cx="-17" cy="82" r="3" fill="#BFC4C9"></circle>
+        <circle cx="17" cy="82" r="3" fill="#BFC4C9"></circle>
+      </g></g><g transform="translate(0 30) rotate(28 0 82) scale(0.86)"><g>
+        <path d="M20 -76 H40 L48 -62 V-6 H20 Z" fill="#BFC4C9"></path>
+        <path d="M-48 -62 L-40 -76 H20 V-6 H-48 Z" fill="#FFFFFF"></path>
+        <path d="M-40 -76 Q0 -94 40 -76 Z" fill="#FFFFFF"></path>
+        <rect x="-48" y="-60" width="96" height="6" fill="#D4AF37"></rect>
+        <rect x="-48" y="-48" width="96" height="6" fill="#D4AF37"></rect>
+        <rect x="-48" y="-37" width="96" height="4" fill="#111315"></rect>
+        <path d="M-44 -6 L-36 26 H18 V-6 Z" fill="#FFFFFF"></path>
+        <path d="M18 -6 H44 L36 26 H18 Z" fill="#BFC4C9"></path>
+        <circle cx="0" cy="6" r="13" fill="#BFC4C9"></circle>
+        <circle cx="0" cy="6" r="6" fill="#111315"></circle>
+        <path d="M-13 12 H13 L20 70 H-20 Z" fill="#FFFFFF"></path>
+        <path d="M-5 20 H5 L8 62 H-8 Z" fill="#BFC4C9"></path>
+        <circle cx="0" cy="82" r="24" fill="#FFFFFF"></circle>
+        <circle cx="0" cy="82" r="11" fill="#111315"></circle>
+        <circle cx="-17" cy="82" r="3" fill="#BFC4C9"></circle>
+        <circle cx="17" cy="82" r="3" fill="#BFC4C9"></circle>
+      </g></g><circle cx="0" cy="100" r="22" fill="#111315" stroke="#D4AF37" stroke-width="7"></circle><circle cx="0" cy="100" r="7" fill="#D4AF37"></circle></svg>
