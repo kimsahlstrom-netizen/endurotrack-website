@@ -1,4 +1,4 @@
-/* EnduroTrack website – black, white & gold (2026 redesign).
+/* Maxvarv website – black, white & gold (2026 redesign).
    Font: Archivo (SIL Open Font License, see fonts/OFL-Archivo.txt),
    hosted on this site – no third-party font requests (GDPR friendly).
    Width 125 + Black Italic matches the app's SF Pro Expanded headlines
@@ -22,14 +22,14 @@
 }
 
 :root {
-  --ink: #111315;
-  --ink-2: #1c1f22;
+  --ink: #0a1847;
+  --ink-2: #15296e;
   --asphalt: #f3f3f1;
   --card: #ffffff;
-  --gold: #d4af37;
-  --gold-text: #8a6b12;
+  --gold: #ffd200;
+  --gold-text: #1b3fb5;
   --muted: #5b6168;
-  --muted-on-ink: #b9bec4;
+  --muted-on-ink: #b8c4e8;
   --line: #e3e1da;
   --enduro: #1f5c45;
   --snow: #2f6e9e;
@@ -75,7 +75,7 @@ a:hover { color: var(--gold-text); }
 .site-header { background: var(--ink); color: #fff; position: relative; z-index: 2; }
 .site-header .wrap { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; padding-top: 14px; padding-bottom: 14px; }
 .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
-.brand img { width: 48px; height: auto; }
+.brand img { width: 44px; height: auto; border-radius: 10px; }
 .brand span { font-size: 24px; }
 .nav { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 20px; }
 .nav a { color: #fff; text-decoration: none; font-weight: 700; font-size: 15px; padding: 10px 0; }
