@@ -75,7 +75,7 @@ a:hover { color: var(--gold-text); }
 .site-header { background: var(--ink); color: #fff; position: relative; z-index: 2; }
 .site-header .wrap { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; padding-top: 14px; padding-bottom: 14px; }
 .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
-.brand img { width: 44px; height: auto; border-radius: 10px; }
+.brand img { width: 44px; height: auto; }
 .brand span { font-size: 24px; }
 .nav { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 20px; }
 .nav a { color: #fff; text-decoration: none; font-weight: 700; font-size: 15px; padding: 10px 0; }
