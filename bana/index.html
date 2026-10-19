@@ -78,6 +78,22 @@
   .follow .muted-small { font-size: 13px; }
   .club-tools { text-align: center; margin-top: 18px; font-size: 14px; color: var(--muted); }
   .club-tools button { background: none; border: 0; color: var(--gold-text); font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; padding: 0; }
+  .vip { display: inline-flex; align-items: center; gap: 6px; margin-left: 8px; background: var(--gold); color: var(--ink); border-radius: 6px;
+    padding: 4px 12px; transform: skewX(-10deg); font-size: 13px; vertical-align: top; }
+  .followers { color: var(--muted-on-ink); font-size: 14px; font-weight: 700; margin-top: 6px; }
+  .photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin-bottom: 22px; }
+  .photos img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 12px; background: var(--line); }
+  .photos img:first-child { grid-column: 1 / -1; aspect-ratio: 16 / 9; }
+  .lb { list-style: none; margin: 0; padding: 0; }
+  .lb li { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-top: 1px solid var(--line); }
+  .lb li:first-child { border-top: 0; padding-top: 0; }
+  .lb .pos { width: 28px; font-size: 20px; text-align: center; }
+  .lb li:first-child .pos { color: var(--gold-text); }
+  .lb .who { flex: 1; font-weight: 800; }
+  .lb .who small { display: block; font-weight: 600; color: var(--muted); font-size: 12px; }
+  .lb .t { font-size: 20px; font-variant-numeric: tabular-nums; }
+  .cal { background: none; border: 0; padding: 0; margin-top: 6px; color: var(--gold-text); font: inherit; font-size: 13px; font-weight: 700; text-decoration: underline; cursor: pointer; }
+  .cal-all { margin-top: 12px; }
   .loading { max-width: 980px; margin: 0 auto; padding: 40px 16px; color: var(--muted); }
 
   /* Printable poster for the club (QR code at the gate) */
@@ -149,6 +165,40 @@
   function time(iso) {
     return new Date(iso).toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" });
   }
+  function lap(sec) {
+    var m = Math.floor(sec / 60), r = sec - m * 60;
+    return m + ":" + (r < 10 ? "0" : "") + r.toFixed(1);
+  }
+  function icsDate(iso) {
+    return new Date(iso).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  }
+  function icsText(t) {
+    return String(t || "").replace(/\\/g, "\\\\").replace(/\n/g, "\\n").replace(/([,;])/g, "\\$1");
+  }
+  // Calendar file (.ics) that every phone and computer calendar can open.
+  function downloadIcs(spot, events, filename) {
+    var lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Maxvarv//Bana//SV", "CALSCALE:GREGORIAN"];
+    events.forEach(function (e, i) {
+      var end = e.ends_at || new Date(new Date(e.starts_at).getTime() + 2 * 3600000).toISOString();
+      lines.push("BEGIN:VEVENT",
+        "UID:" + spot.id + "-" + icsDate(e.starts_at) + "-" + i + "@maxvarv.se",
+        "DTSTAMP:" + icsDate(new Date().toISOString()),
+        "DTSTART:" + icsDate(e.starts_at),
+        "DTEND:" + icsDate(end),
+        "SUMMARY:" + icsText((KINDS[e.kind] || "Händelse") + ": " + e.title + " – " + spot.name),
+        "LOCATION:" + icsText(spot.name + (spot.club ? ", " + spot.club : "")),
+        "GEO:" + spot.latitude + ";" + spot.longitude,
+        "DESCRIPTION:" + icsText((e.details ? e.details + "\n\n" : "") + location.href),
+        "URL:" + location.href,
+        "END:VEVENT");
+    });
+    lines.push("END:VCALENDAR");
+    var blob = new Blob([lines.join("\r\n")], { type: "text/calendar;charset=utf-8" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+  }
   function fail(text) {
     page.textContent = "";
     var m = el("main", "track");
@@ -189,9 +239,17 @@
     // ---- Hero ------------------------------------------------------------
     var hero = el("section", "hero-track");
     var hw = el("div", "wrap");
-    hw.appendChild(el("span", "badge display", s.official ? "Officiell bana" : "Ställe att köra"));
+    var badges = el("div");
+    badges.appendChild(el("span", "badge display", s.official ? "Officiell bana" : "Ställe att köra"));
+    if (s.club_verified) {
+      var vip = el("span", "vip display", "✓ Klubben på Maxvarv");
+      vip.title = "Klubben uppdaterar själv banan i Maxvarv – status, öppettider och kalender kommer direkt från klubben.";
+      badges.appendChild(vip);
+    }
+    hw.appendChild(badges);
     hw.appendChild(el("h1", "display", s.name));
     if (s.club) hw.appendChild(el("div", "club", s.club));
+    if (s.followers > 0) hw.appendChild(el("div", "followers", s.followers + (s.followers === 1 ? " förare följer banan" : " förare följer banan")));
 
     var vehicles = (s.vehicles || []).map(function (v) { return VEHICLES[v]; }).filter(Boolean);
     if (vehicles.length) {
@@ -229,6 +287,18 @@
     // ---- Body ------------------------------------------------------------
     var main = el("main", "track");
 
+    // Track photos published by the club (or Maxvarv).
+    if ((s.photos || []).length) {
+      var gallery = el("div", "photos");
+      main.appendChild(gallery);
+      s.photos.forEach(function (path) {
+        fetch(SUPABASE + "/storage/v1/object/authenticated/photos/" + path.split("/").map(encodeURIComponent).join("/"), { headers: { "apikey": KEY } })
+          .then(function (r) { if (!r.ok) throw r; return r.blob(); })
+          .then(function (b) { var img = el("img"); img.alt = s.name; img.src = URL.createObjectURL(b); gallery.appendChild(img); })
+          .catch(function () {});
+      });
+    }
+
     // Map: loads OpenStreetMap only on request.
     var map = el("div", "map");
     var cover = el("div", "map-cover");
@@ -237,7 +307,7 @@
     var showMap = el("button", "btn", "Visa karta");
     showMap.type = "button";
     cover.appendChild(showMap);
-    cover.appendChild(el("small", null, "Kartan hämtas från OpenStreetMap när du trycker."));
+    cover.appendChild(el("small", null, (s.gate_lat != null ? "Med start/mål-linjen för varvtider. " : "") + "Kartan hämtas från OpenStreetMap när du trycker."));
     map.appendChild(cover);
     showMap.addEventListener("click", function () {
       showMap.textContent = "Laddar karta…";
@@ -251,6 +321,13 @@
         }).addTo(lmap);
         L.circleMarker([s.latitude, s.longitude], { radius: 11, color: "#0a1847", weight: 4, fillColor: "#ffd200", fillOpacity: 1 })
           .addTo(lmap).bindPopup(s.name);
+        if (s.gate_lat != null && s.gate_lon != null) {
+          // Start/finish: laps count within 20 m of this point.
+          L.circle([s.gate_lat, s.gate_lon], { radius: 20, color: "#0a1847", weight: 3, dashArray: "6 5", fillColor: "#ffffff", fillOpacity: 0.5 }).addTo(lmap);
+          L.marker([s.gate_lat, s.gate_lon], { icon: L.divIcon({ className: "", html: '<div style="font-size:26px;line-height:1;transform:translate(-4px,-22px)">🏁</div>' }) })
+            .addTo(lmap).bindPopup("Start/mål – varvtiderna mäts här");
+          lmap.fitBounds(L.latLngBounds([[s.latitude, s.longitude], [s.gate_lat, s.gate_lon]]).pad(0.6), { maxZoom: 17 });
+        }
       }).catch(function () { showMap.textContent = "Kunde inte ladda kartan"; });
     });
     main.appendChild(map);
@@ -275,9 +352,20 @@
           time(e.starts_at) + (e.ends_at ? "–" + time(e.ends_at) : "")));
         body.appendChild(el("div", "title", e.title));
         if (e.details) body.appendChild(el("p", null, e.details));
+        var add = el("button", "cal", "+ Lägg till i kalendern");
+        add.type = "button";
+        add.addEventListener("click", function () { downloadIcs(s, [e], "maxvarv-" + e.title.replace(/[^\wåäöÅÄÖ-]+/g, "-") + ".ics"); });
+        body.appendChild(add);
         row.appendChild(body);
         ev.appendChild(row);
       });
+      if (s.events.length > 1) {
+        var all = el("button", "btn cal-all", "Lägg till alla i kalendern");
+        all.type = "button";
+        all.style.background = "var(--ink)"; all.style.color = "#fff"; all.style.fontSize = "14px"; all.style.minHeight = "44px"; all.style.cursor = "pointer";
+        all.addEventListener("click", function () { downloadIcs(s, s.events, "maxvarv-" + s.name.replace(/[^\wåäöÅÄÖ-]+/g, "-") + ".ics"); });
+        ev.appendChild(all);
+      }
     } else {
       ev.appendChild(el("p", "empty", "Inga inlagda träningar eller tävlingar just nu."));
     }
@@ -295,6 +383,29 @@
         mc.appendChild(r);
       });
       left.appendChild(mc);
+    }
+
+    // Fastest laps this season (riders who chose to show their times)
+    if (s.gate_lat != null) {
+      var lc = el("section", "card");
+      lc.appendChild(el("h2", "display", "Snabbaste varv " + new Date().getFullYear()));
+      if ((s.leaderboard || []).length) {
+        var ol = el("ol", "lb");
+        s.leaderboard.forEach(function (r, i) {
+          var li = el("li");
+          li.appendChild(el("span", "pos display", String(i + 1)));
+          var who = el("span", "who", r.name);
+          who.appendChild(el("small", null, (VEHICLES[r.vehicle] || "") + " · " + new Date(r.at).toLocaleDateString("sv-SE", { day: "numeric", month: "short" })));
+          li.appendChild(who);
+          li.appendChild(el("span", "t display", lap(r.seconds)));
+          ol.appendChild(li);
+        });
+        lc.appendChild(ol);
+      } else {
+        lc.appendChild(el("p", "empty", "Inga varvtider än i år. Kör ett varv över start/mål med Maxvarv igång – tiden räknas automatiskt."));
+      }
+      lc.appendChild(el("p", "empty", "Bara förare som valt att visa sina tider syns här.")).style.fontSize = "12px";
+      right.appendChild(lc);
     }
 
     // Information
