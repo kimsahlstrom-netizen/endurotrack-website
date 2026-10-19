@@ -96,14 +96,41 @@
   .cal-all { margin-top: 12px; }
   .loading { max-width: 980px; margin: 0 auto; padding: 40px 16px; color: var(--muted); }
 
-  /* Printable poster for the club (QR code at the gate) */
+  /* Printable A4 poster for the club (QR code at the gate). Shown on screen
+     with ?affisch=1, and used when the club presses "Skriv ut". */
   #poster { display: none; }
+  .pz { width: 210mm; height: 297mm; margin: 0 auto; background: var(--ink); color: #fff; position: relative; overflow: hidden;
+    display: flex; flex-direction: column; align-items: center; text-align: center; padding: 16mm 16mm 12mm;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .pz::before { content: ""; position: absolute; left: -40mm; right: -40mm; top: 118mm; height: 46mm; background: var(--gold);
+    transform: skewY(-8deg); opacity: .95; }
+  .pz > * { position: relative; z-index: 1; }
+  .pz-brand { display: flex; align-items: center; gap: 4mm; }
+  .pz-brand img { width: 16mm; height: 16mm; }
+  .pz-brand span { font-size: 15mm; }
+  .pz-badges { display: flex; gap: 3mm; margin-top: 8mm; }
+  .pz-badge { background: #fff; color: var(--ink); border-radius: 2mm; padding: 1.4mm 4mm; transform: skewX(-10deg); font-size: 4.2mm; }
+  .pz-badge.vip { background: var(--gold); }
+  .pz-q { font-size: 9mm; color: var(--gold); margin-top: 9mm; }
+  .pz h1 { font-size: 17mm; line-height: .92; margin: 3mm 0 0; overflow-wrap: anywhere; }
+  .pz-club { font-size: 7mm; font-weight: 800; color: var(--muted-on-ink); margin-top: 3mm; }
+  .pz-qrcard { background: #fff; border-radius: 6mm; padding: 6mm 6mm 4mm; margin-top: 9mm; border: 2.5mm solid var(--ink);
+    box-shadow: 0 0 0 1.6mm var(--gold); }
+  .pz-qrcard .qr img, .pz-qrcard .qr canvas { width: 72mm !important; height: 72mm !important; display: block; }
+  .pz-scan { color: var(--ink); font-size: 5mm; margin-top: 3mm; }
+  .pz-feats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4mm; list-style: none; padding: 0; margin: 10mm 0 0; width: 100%; }
+  .pz-feats li { background: rgba(255,255,255,.08); border-radius: 4mm; padding: 4mm 3mm; font-size: 4.3mm; font-weight: 700; line-height: 1.3; }
+  .pz-feats b { display: block; font-size: 8mm; margin-bottom: 1.5mm; }
+  .pz-foot { margin-top: auto; font-size: 4.6mm; color: var(--muted-on-ink); }
+  .pz-foot strong { color: #fff; }
+  body.poster-mode > *:not(#poster) { display: none !important; }
+  body.poster-mode { background: #888; }
+  body.poster-mode #poster { display: block; padding: 10mm 0; }
   @media print {
     body > *:not(#poster) { display: none !important; }
-    #poster { display: flex !important; flex-direction: column; align-items: center; text-align: center; gap: 18px; padding: 30px; color: #000; }
-    #poster h1 { font-size: 54px; margin: 0; }
-    #poster .qr img, #poster .qr canvas { width: 9cm !important; height: 9cm !important; }
-    @page { size: A4; margin: 1.5cm; }
+    body, body.poster-mode { background: none; }
+    #poster, body.poster-mode #poster { display: block !important; padding: 0; }
+    @page { size: A4; margin: 0; }
   }
 </style>
 </head>
@@ -223,6 +250,48 @@
     var l = document.createElement("link");
     l.rel = "stylesheet"; l.href = href;
     document.head.appendChild(l);
+  }
+
+  // A4 poster: Maxvarv look with the track's and the club's name.
+  function buildPoster(s) {
+    var p = document.getElementById("poster");
+    p.textContent = "";
+    var pz = el("div", "pz");
+    var brand = el("div", "pz-brand");
+    var logo = el("img"); logo.src = "../assets/mark.png"; logo.alt = "";
+    brand.appendChild(logo);
+    var word = el("span", "display", "Max");
+    word.appendChild(el("span", "gold", "varv"));
+    brand.appendChild(word);
+    pz.appendChild(brand);
+    var badges = el("div", "pz-badges");
+    badges.appendChild(el("span", "pz-badge display", s.official ? "Officiell bana" : "Ställe att köra"));
+    if (s.club_verified) badges.appendChild(el("span", "pz-badge vip display", "✓ Klubben på Maxvarv"));
+    pz.appendChild(badges);
+    pz.appendChild(el("div", "pz-q display", "Öppet idag?"));
+    var title = el("h1", "display", s.name);
+    // Long one-word names get a smaller size so they fit across the page.
+    var longest = Math.max.apply(null, s.name.split(/\s+/).map(function (w) { return w.length; }));
+    title.style.fontSize = Math.min(17, 168 / Math.max(longest, 1)) + "mm";
+    pz.appendChild(title);
+    if (s.club) pz.appendChild(el("div", "pz-club", s.club));
+    var card = el("div", "pz-qrcard");
+    var qr = el("div", "qr");
+    card.appendChild(qr);
+    card.appendChild(el("div", "pz-scan display", "Skanna med kameran"));
+    pz.appendChild(card);
+    new QRCode(qr, { text: "https://maxvarv.se/bana/?id=" + s.id, width: 600, height: 600, colorDark: "#0a1847", correctLevel: QRCode.CorrectLevel.M });
+    var feats = el("ul", "pz-feats");
+    [["🟢", "Öppet eller stängt – direkt från klubben"], ["📅", "Träningar, tävlingar och jobbardagar"], ["⏱️", "Dina varvtider på banan"]].forEach(function (f) {
+      var li = el("li"); li.appendChild(el("b", null, f[0])); li.appendChild(document.createTextNode(f[1])); feats.appendChild(li);
+    });
+    pz.appendChild(feats);
+    var foot = el("div", "pz-foot");
+    foot.appendChild(document.createTextNode("Följ banan gratis i appen "));
+    foot.appendChild(el("strong", null, "Maxvarv"));
+    foot.appendChild(document.createTextNode(" · maxvarv.se"));
+    pz.appendChild(foot);
+    p.appendChild(pz);
   }
 
   if (!/^[0-9a-f-]{36}$/i.test(id)) { fail("Länken saknar bana. Öppna banan i Maxvarv och tryck Dela."); return; }
@@ -455,15 +524,7 @@
     print.addEventListener("click", function () {
       print.textContent = "Förbereder…";
       loadScript("https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js").then(function () {
-        var p = document.getElementById("poster");
-        p.textContent = "";
-        p.appendChild(el("div", "display", "Maxvarv"));
-        p.appendChild(el("h1", "display", s.name));
-        p.appendChild(el("p", null, "Skanna för att se om banan är öppen idag, öppettider och kommande träningar – och följ banan i Maxvarv."));
-        var qr = el("div", "qr");
-        p.appendChild(qr);
-        new QRCode(qr, { text: location.href, width: 512, height: 512, correctLevel: QRCode.CorrectLevel.M });
-        p.appendChild(el("p", null, "maxvarv.se"));
+        buildPoster(s);
         print.textContent = "Skriv ut en affisch med QR-kod till banan";
         setTimeout(function () { window.print(); }, 300);
       }).catch(function () { print.textContent = "Kunde inte skapa QR-koden"; });
@@ -472,6 +533,14 @@
     main.appendChild(tools);
 
     page.appendChild(main);
+
+    // maxvarv.se/bana/?id=…&affisch=1 shows the poster directly (preview / PDF).
+    if (new URLSearchParams(location.search).get("affisch") === "1") {
+      loadScript("https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js").then(function () {
+        buildPoster(s);
+        document.body.classList.add("poster-mode");
+      });
+    }
   }).catch(function () {
     fail("Kunde inte hämta banan just nu. Försök igen om en stund.");
   });
