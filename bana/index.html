@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bana – Maxvarv</title>
+<meta name="description" content="Status, öppettider, priser och kommande händelser för banan – direkt från klubben i Maxvarv.">
+<meta name="theme-color" content="#0a1847">
+<meta property="og:title" content="Banan i Maxvarv">
+<meta property="og:description" content="Öppet idag? Se status, öppettider, priser och kommande händelser – direkt från klubben.">
+<meta property="og:image" content="https://maxvarv.se/assets/app-icon.png">
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
+<link rel="preload" href="../assets/fonts/Archivo-Italic.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../assets/style.css?v=20261013b">
+<style>
+  .track { max-width: 720px; margin: 0 auto; padding: 32px 16px 56px; }
+  .track h1 { margin: 6px 0 4px; }
+  .track .club { opacity: .75; font-weight: 700; }
+  .status { display: flex; gap: 12px; align-items: flex-start; border-radius: 14px; padding: 14px 16px; margin: 18px 0; font-weight: 700; }
+  .status.open { background: rgba(61,190,107,.14); color: #1f8a46; }
+  .status.closed { background: rgba(217,45,32,.12); color: #b42318; }
+  .status .dot { width: 12px; height: 12px; border-radius: 50%; background: currentColor; margin-top: 5px; flex: none; }
+  .status small { display: block; font-weight: 600; opacity: .8; margin-top: 2px; }
+  .block { margin: 22px 0; }
+  .block h2 { font-size: 13px; letter-spacing: .1em; margin: 0 0 10px; }
+  .row { border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; background: rgba(10,24,71,.05); }
+  .row .when { font-size: 12px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; opacity: .7; }
+  .row .title { font-weight: 800; margin-top: 2px; }
+  .row p { margin: 4px 0 0; white-space: pre-line; }
+  .pre { white-space: pre-line; }
+  .follow { border-radius: 16px; padding: 18px; margin-top: 28px; background: #0a1847; color: #fff; }
+  .follow p { margin: 6px 0 14px; opacity: .85; }
+  .muted { opacity: .65; }
+</style>
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../" aria-label="Maxvarv">
+      <img src="../assets/mark.png" alt="" width="44" height="44">
+      <span class="display">Max<span class="gold">varv</span></span>
+    </a>
+    <nav class="nav" aria-label="Main">
+      <a href="../#funktioner">Funktioner</a>
+      <a href="../klubbar/">För klubbar</a>
+    </nav>
+  </div>
+</header>
+<main class="track" id="track">
+  <p class="muted" id="loading">Hämtar banan…</p>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <span>© 2026 Maxvarv · Kim Sahlström, Sverige</span>
+    <nav aria-label="Footer">
+      <a href="../integritet/">Integritetspolicy</a>
+      <a href="../villkor/">Användarvillkor</a>
+      <a href="mailto:hej@maxvarv.se">hej@maxvarv.se</a>
+    </nav>
+  </div>
+</footer>
+<script>
+// Public track page: only what the club publishes (Supabase function
+// public_spot). Same project and publishable client key as the app.
+(function () {
+  var SUPABASE = "https://xhxugrpbypzushqkknnd.supabase.co";
+  var KEY = "sb_publishable_RBqx84SpN7z1IBwbItBtDA_05goMtyP";
+  var APP_STORE = "https://apps.apple.com/se/app/maxvarv/id6820570956";
+  var root = document.getElementById("track");
+  var id = new URLSearchParams(location.search).get("id") || "";
+  var KINDS = { training: "Träning", competition: "Tävling", work_day: "Jobbardag", other: "Händelse" };
+
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+  function when(iso) {
+    return new Date(iso).toLocaleString("sv-SE", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  }
+  function ago(iso) {
+    var min = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+    if (min < 60) return "för " + Math.max(min, 1) + " min sedan";
+    var h = Math.round(min / 60);
+    if (h < 24) return "för " + h + " tim sedan";
+    return new Date(iso).toLocaleDateString("sv-SE", { day: "numeric", month: "short" });
+  }
+  function fail(text) {
+    root.textContent = "";
+    root.appendChild(el("h1", "display", "Banan hittades inte"));
+    root.appendChild(el("p", "muted", text));
+  }
+
+  if (!/^[0-9a-f-]{36}$/i.test(id)) { fail("Länken saknar bana. Öppna banan i Maxvarv och tryck Dela."); return; }
+
+  fetch(SUPABASE + "/rest/v1/rpc/public_spot", {
+    method: "POST",
+    headers: { "apikey": KEY, "Content-Type": "application/json" },
+    body: JSON.stringify({ p_spot: id })
+  }).then(function (r) { return r.json(); }).then(function (s) {
+    if (!s || !s.name) { fail("Banan finns inte längre, eller så är länken fel."); return; }
+    document.title = s.name + " – Maxvarv";
+    root.textContent = "";
+    root.appendChild(el("span", "badge display", s.official ? "Officiell bana" : "Ställe att köra"));
+    root.appendChild(el("h1", "display", s.name));
+    if (s.club) root.appendChild(el("div", "club", s.club));
+
+    if (s.status === "open" || s.status === "closed") {
+      var st = el("div", "status " + s.status);
+      st.appendChild(el("span", "dot"));
+      var t = el("div", null, s.status === "open" ? "ÖPPET IDAG" : "STÄNGT");
+      if (s.status_note) t.appendChild(el("small", null, s.status_note));
+      if (s.status_updated_at) t.appendChild(el("small", null, "Uppdaterat " + ago(s.status_updated_at)));
+      st.appendChild(t);
+      root.appendChild(st);
+    }
+
+    function block(title, rows) {
+      if (!rows.length) return;
+      var b = el("section", "block");
+      b.appendChild(el("h2", "display gold", title));
+      rows.forEach(function (r) { b.appendChild(r); });
+      root.appendChild(b);
+    }
+
+    block("Kommande", (s.events || []).map(function (e) {
+      var r = el("div", "row");
+      r.appendChild(el("div", "when", (KINDS[e.kind] || "Händelse") + " · " + when(e.starts_at) +
+        (e.ends_at ? "–" + new Date(e.ends_at).toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" }) : "")));
+      r.appendChild(el("div", "title", e.title));
+      if (e.details) r.appendChild(el("p", null, e.details));
+      return r;
+    }));
+
+    block("Senaste från klubben", (s.messages || []).filter(function (m) { return m.message; }).map(function (m) {
+      var r = el("div", "row");
+      r.appendChild(el("div", "when", ago(m.created_at)));
+      r.appendChild(el("p", null, m.message));
+      return r;
+    }));
+
+    var info = [];
+    [["Öppettider", s.opening_hours], ["Priser", s.prices], ["Om banan", s.description]].forEach(function (pair) {
+      if (!pair[1]) return;
+      var r = el("div", "row");
+      r.appendChild(el("div", "when", pair[0]));
+      r.appendChild(el("p", "pre", pair[1]));
+      info.push(r);
+    });
+    var contact = el("div", "row");
+    contact.appendChild(el("div", "when", "Hitta hit & kontakt"));
+    var links = el("p");
+    function link(text, href) {
+      var a = el("a", null, text); a.href = href; a.rel = "noopener";
+      links.appendChild(a); links.appendChild(document.createTextNode("  ·  "));
+    }
+    link("Vägbeskrivning", "https://www.google.com/maps/dir/?api=1&destination=" + s.latitude + "," + s.longitude);
+    if (s.website && /^https?:\/\//i.test(s.website)) link("Hemsida", s.website);
+    if (s.phone) link(s.phone, "tel:" + s.phone.replace(/[^0-9+]/g, ""));
+    if (s.email) link(s.email, "mailto:" + s.email);
+    if (links.lastChild) links.removeChild(links.lastChild);
+    contact.appendChild(links);
+    info.push(contact);
+    block("Information", info);
+
+    var f = el("div", "follow");
+    f.appendChild(el("strong", "display", "Följ banan i Maxvarv"));
+    f.appendChild(el("p", null, "Få en notis i telefonen när klubben sätter Öppet idag, lägger in en träning eller skriver till förarna. Gratis."));
+    var btn = el("a", "btn btn-gold", "Ladda ner för iPhone");
+    btn.href = APP_STORE;
+    f.appendChild(btn);
+    f.appendChild(el("p", "muted", "Android kommer snart."));
+    root.appendChild(f);
+  }).catch(function () {
+    fail("Kunde inte hämta banan just nu. Försök igen om en stund.");
+  });
+})();
+</script>
+</body>
+</html>
