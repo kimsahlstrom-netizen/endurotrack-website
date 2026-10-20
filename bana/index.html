@@ -44,6 +44,7 @@
   .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; }
   .card + .card { margin-top: 22px; }
   .card h2 { font-size: 15px; letter-spacing: .08em; margin: 0 0 14px; color: var(--gold-text); }
+  .card h3 { font-size: 13px; margin: 14px 0 6px; }
   .empty { color: var(--muted); margin: 0; }
 
   .map { position: relative; height: 300px; border-radius: var(--radius); overflow: hidden; background: #dfe5d8;
@@ -368,6 +369,11 @@
       });
     }
 
+    // Timed courses (motocross track, enduro loop …), each with its own
+    // start/finish line and season top 5. Older data: the single line.
+    var courses = (s.courses || []).length ? s.courses
+      : (s.gate_lat != null ? [{ name: null, gate_lat: s.gate_lat, gate_lon: s.gate_lon, leaderboard: s.leaderboard || [] }] : []);
+
     // Map: loads OpenStreetMap only on request.
     var map = el("div", "map");
     var cover = el("div", "map-cover");
@@ -376,7 +382,7 @@
     var showMap = el("button", "btn", "Visa karta");
     showMap.type = "button";
     cover.appendChild(showMap);
-    cover.appendChild(el("small", null, (s.gate_lat != null ? "Med start/mål-linjen för varvtider. " : "") + "Kartan hämtas från OpenStreetMap när du trycker."));
+    cover.appendChild(el("small", null, (courses.length ? (courses.length > 1 ? "Med start/mål-linjerna för varvtider. " : "Med start/mål-linjen för varvtider. ") : "") + "Kartan hämtas från OpenStreetMap när du trycker."));
     map.appendChild(cover);
     showMap.addEventListener("click", function () {
       showMap.textContent = "Laddar karta…";
@@ -390,12 +396,19 @@
         }).addTo(lmap);
         L.circleMarker([s.latitude, s.longitude], { radius: 11, color: "#0a1847", weight: 4, fillColor: "#ffd200", fillOpacity: 1 })
           .addTo(lmap).bindPopup(s.name);
-        if (s.gate_lat != null && s.gate_lon != null) {
-          // Start/finish: laps count within 20 m of this point.
-          L.circle([s.gate_lat, s.gate_lon], { radius: 20, color: "#0a1847", weight: 3, dashArray: "6 5", fillColor: "#ffffff", fillOpacity: 0.5 }).addTo(lmap);
-          L.marker([s.gate_lat, s.gate_lon], { icon: L.divIcon({ className: "", html: '<div style="font-size:26px;line-height:1;transform:translate(-4px,-22px)">🏁</div>' }) })
-            .addTo(lmap).bindPopup("Start/mål – varvtiderna mäts här");
-          lmap.fitBounds(L.latLngBounds([[s.latitude, s.longitude], [s.gate_lat, s.gate_lon]]).pad(0.6), { maxZoom: 17 });
+        if (courses.length) {
+          var pts = [[s.latitude, s.longitude]];
+          courses.forEach(function (c) {
+            // Start/finish: laps count within 20 m of this point.
+            L.circle([c.gate_lat, c.gate_lon], { radius: 20, color: "#0a1847", weight: 3, dashArray: "6 5", fillColor: "#ffffff", fillOpacity: 0.5 }).addTo(lmap);
+            var popup = el("div");
+            if (c.name) popup.appendChild(el("strong", null, c.name + " "));
+            popup.appendChild(document.createTextNode("Start/mål – varvtiderna mäts här"));
+            L.marker([c.gate_lat, c.gate_lon], { icon: L.divIcon({ className: "", html: '<div style="font-size:26px;line-height:1;transform:translate(-4px,-22px)">🏁</div>' }) })
+              .addTo(lmap).bindPopup(popup);
+            pts.push([c.gate_lat, c.gate_lon]);
+          });
+          lmap.fitBounds(L.latLngBounds(pts).pad(0.6), { maxZoom: 17 });
         }
       }).catch(function () { showMap.textContent = "Kunde inte ladda kartan"; });
     });
@@ -455,24 +468,27 @@
     }
 
     // Fastest laps this season (riders who chose to show their times)
-    if (s.gate_lat != null) {
+    if (courses.length) {
       var lc = el("section", "card");
       lc.appendChild(el("h2", "display", "Snabbaste varv " + new Date().getFullYear()));
-      if ((s.leaderboard || []).length) {
-        var ol = el("ol", "lb");
-        s.leaderboard.forEach(function (r, i) {
-          var li = el("li");
-          li.appendChild(el("span", "pos display", String(i + 1)));
-          var who = el("span", "who", r.name);
-          who.appendChild(el("small", null, (VEHICLES[r.vehicle] || "") + " · " + new Date(r.at).toLocaleDateString("sv-SE", { day: "numeric", month: "short" })));
-          li.appendChild(who);
-          li.appendChild(el("span", "t display", lap(r.seconds)));
-          ol.appendChild(li);
-        });
-        lc.appendChild(ol);
-      } else {
-        lc.appendChild(el("p", "empty", "Inga varvtider än i år. Kör ett varv över start/mål med Maxvarv igång – tiden räknas automatiskt."));
-      }
+      courses.forEach(function (c) {
+        if (courses.length > 1 || c.name) lc.appendChild(el("h3", null, "🏁 " + (c.name || "")));
+        if ((c.leaderboard || []).length) {
+          var ol = el("ol", "lb");
+          c.leaderboard.forEach(function (r, i) {
+            var li = el("li");
+            li.appendChild(el("span", "pos display", String(i + 1)));
+            var who = el("span", "who", r.name);
+            who.appendChild(el("small", null, (VEHICLES[r.vehicle] || "") + " · " + new Date(r.at).toLocaleDateString("sv-SE", { day: "numeric", month: "short" })));
+            li.appendChild(who);
+            li.appendChild(el("span", "t display", lap(r.seconds)));
+            ol.appendChild(li);
+          });
+          lc.appendChild(ol);
+        } else {
+          lc.appendChild(el("p", "empty", "Inga varvtider än i år. Kör ett varv över start/mål med Maxvarv igång – tiden räknas automatiskt."));
+        }
+      });
       lc.appendChild(el("p", "empty", "Bara förare som valt att visa sina tider syns här.")).style.fontSize = "12px";
       right.appendChild(lc);
     }
