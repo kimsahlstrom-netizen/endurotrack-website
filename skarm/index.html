@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Klubbstugeskärm – Maxvarv</title>
+<meta name="description" content="Varvtider på storskärm i klubbstugan – dagens bästa, senaste varven och säsongens topplista, direkt från Maxvarv.">
+<meta name="theme-color" content="#0a1847">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
+<link rel="preload" href="../assets/fonts/Archivo-Italic.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+  /* Clubhouse screen: built for a 16:9 TV in full screen, sized in vw/vh so it
+     scales from a laptop to a big TV. Same colours and font as maxvarv.se. */
+  @font-face { font-family: "Archivo"; src: url("../assets/fonts/Archivo.woff2") format("woff2");
+    font-weight: 100 900; font-stretch: 62% 125%; font-style: normal; font-display: swap; }
+  @font-face { font-family: "Archivo"; src: url("../assets/fonts/Archivo-Italic.woff2") format("woff2");
+    font-weight: 100 900; font-stretch: 62% 125%; font-style: italic; font-display: swap; }
+
+  :root {
+    --ink: #0a1847; --ink-2: #13256a; --ink-3: #1b3184; --gold: #ffd200; --muted: #b8c4e8;
+    --line: rgba(255,255,255,.12); --green: #2bb673; --red: #e5484d;
+    --u: min(1vw, 1.78vh); /* one "unit" that fits both wide and tall screens */
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { background: var(--ink); color: #fff; font-family: "Archivo", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    overflow: hidden; -webkit-font-smoothing: antialiased; }
+  body.idle { cursor: none; }
+  .disp { font-style: italic; font-weight: 900; font-stretch: 125%; text-transform: uppercase; letter-spacing: -.01em; }
+  .gold { color: var(--gold); }
+  .num { font-variant-numeric: tabular-nums; }
+
+  .screen { position: relative; height: 100vh; width: 100vw; display: grid; grid-template-rows: auto 1fr auto;
+    padding: calc(var(--u) * 2.2) calc(var(--u) * 2.6); gap: calc(var(--u) * 1.8);
+    background: radial-gradient(ellipse at 85% -10%, rgba(255,210,0,.13), rgba(255,210,0,0) 45%), var(--ink); }
+  .stripe { position: absolute; top: -10vh; right: 9vw; width: calc(var(--u) * 1.6); height: 130vh; background: var(--gold);
+    transform: rotate(24deg); opacity: .9; pointer-events: none; }
+  .stripe.s2 { right: 6vw; width: calc(var(--u) * .6); background: rgba(255,255,255,.18); }
+
+  /* Top bar */
+  .top { position: relative; z-index: 1; display: flex; align-items: center; gap: calc(var(--u) * 2); }
+  .brand { display: flex; align-items: center; gap: calc(var(--u) * .8); }
+  .brand img { height: calc(var(--u) * 4.2); width: auto; }
+  .brand span { font-size: calc(var(--u) * 2.6); }
+  .track { flex: 1; min-width: 0; padding-left: calc(var(--u) * 2); border-left: 2px solid var(--line); }
+  .track h1 { margin: 0; font-size: calc(var(--u) * 3.6); line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .track .sub { color: var(--muted); font-weight: 700; font-size: calc(var(--u) * 1.5); margin-top: calc(var(--u) * .4);
+    display: flex; gap: calc(var(--u) * 1.2); align-items: center; flex-wrap: wrap; }
+  .pill { display: inline-flex; align-items: center; gap: calc(var(--u) * .5); border-radius: 999px; font-weight: 800;
+    padding: calc(var(--u) * .25) calc(var(--u) * .9); font-size: calc(var(--u) * 1.2); text-transform: uppercase; letter-spacing: .05em;
+    background: rgba(255,255,255,.1); color: #fff; }
+  .pill.open { background: var(--green); } .pill.closed { background: var(--red); }
+  .pill .dot { width: calc(var(--u) * .7); height: calc(var(--u) * .7); border-radius: 50%; background: currentColor; }
+  .pill.live .dot { background: var(--gold); animation: pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: .3; } }
+  .clock { text-align: right; padding-right: calc(var(--u) * 7); }
+  .clock b { display: block; font-size: calc(var(--u) * 4.4); line-height: 1; }
+  .clock small { color: var(--muted); font-weight: 700; font-size: calc(var(--u) * 1.3); text-transform: capitalize; }
+
+  /* Main grid */
+  .main { position: relative; z-index: 1; display: grid; grid-template-columns: 1.25fr 1fr; gap: calc(var(--u) * 1.8); min-height: 0; }
+  .col { display: grid; gap: calc(var(--u) * 1.8); min-height: 0; }
+  .col.right { grid-template-rows: 1fr 1.15fr; }
+  .panel { background: #14275f; border: 1px solid var(--line); border-radius: calc(var(--u) * 1.4);
+    padding: calc(var(--u) * 1.5) calc(var(--u) * 1.8); min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
+  .panel h2 { margin: 0 0 calc(var(--u) * 1); font-size: calc(var(--u) * 1.9); display: flex; align-items: baseline; gap: calc(var(--u) * 1); }
+  .panel h2 small { font-style: normal; font-weight: 700; font-stretch: 100%; text-transform: none; color: var(--muted); font-size: calc(var(--u) * 1.2); letter-spacing: 0; }
+
+  .rows { flex: 1; display: grid; grid-template-rows: repeat(var(--n, 8), minmax(0, 1fr)); gap: calc(var(--u) * .45); min-height: 0; }
+  .row { display: grid; grid-template-columns: calc(var(--u) * 3.2) 1fr auto; align-items: center; gap: calc(var(--u) * 1.2); min-height: 0; overflow: hidden;
+    padding: 0 calc(var(--u) * 1); border-radius: calc(var(--u) * .8); background: rgba(255,255,255,.04); }
+  .row .pos { font-size: calc(var(--u) * 1.8); text-align: center; color: var(--muted); }
+  .row .who { min-width: 0; }
+  .row .who b { display: block; font-size: calc(var(--u) * 1.75); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row .who small { color: var(--muted); font-weight: 700; font-size: calc(var(--u) * 1.05); }
+  .inline .row .who b { display: inline; }
+  .inline .row .who small { margin-left: calc(var(--u) * .8); }
+  .inline .row .who { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row .time { font-size: calc(var(--u) * 2.2); text-align: right; }
+  .row.p1 { background: var(--gold); color: var(--ink); }
+  .row.p1 .pos, .row.p1 .who small { color: var(--ink); opacity: .8; }
+  .row.p2 .pos, .row.p3 .pos { color: var(--gold); }
+
+  .latest .row { grid-template-columns: calc(var(--u) * 5.2) 1fr auto; }
+  .latest .row .pos { white-space: nowrap; font-size: calc(var(--u) * 1.2); font-style: normal; font-weight: 700; font-stretch: 100%; text-transform: none; }
+  .latest .row .who b, .season .row .who b { font-size: calc(var(--u) * 1.5); }
+  .latest .row .time, .season .row .time { font-size: calc(var(--u) * 1.8); }
+  .badge { display: inline-block; background: var(--gold); color: var(--ink); border-radius: 999px; font-weight: 900;
+    font-size: calc(var(--u) * .95); padding: calc(var(--u) * .1) calc(var(--u) * .6); margin-left: calc(var(--u) * .5);
+    vertical-align: middle; text-transform: uppercase; letter-spacing: .04em; font-style: normal; font-stretch: 100%; }
+  .row.new { animation: flash 2.4s ease-out; }
+  @keyframes flash { 0% { background: var(--gold); color: var(--ink); transform: translateX(-2%); } 30% { transform: none; } 100% { } }
+
+
+  .empty { color: var(--muted); font-weight: 700; font-size: calc(var(--u) * 1.6); line-height: 1.35; margin: auto 0; text-align: center; padding: 0 calc(var(--u) * 2); }
+  .empty b { display: block; color: #fff; font-size: calc(var(--u) * 2.2); margin-bottom: calc(var(--u) * .5); }
+
+  /* Bottom bar */
+  .bottom { position: relative; z-index: 1; display: flex; align-items: center; gap: calc(var(--u) * 2.4); }
+  .stat b { display: block; font-size: calc(var(--u) * 3.4); line-height: 1; color: var(--gold); }
+  .stat small { color: var(--muted); font-weight: 700; font-size: calc(var(--u) * 1.2); text-transform: uppercase; letter-spacing: .06em; }
+  .course-name { font-size: calc(var(--u) * 1.6); }
+  .dots { display: flex; gap: calc(var(--u) * .5); margin-top: calc(var(--u) * .4); }
+  .dots i { width: calc(var(--u) * 1.6); height: calc(var(--u) * .4); border-radius: 9px; background: rgba(255,255,255,.2); }
+  .dots i.on { background: var(--gold); }
+  .cta { margin-left: auto; display: flex; align-items: center; gap: calc(var(--u) * 1.4); background: #fff; color: var(--ink);
+    border-radius: calc(var(--u) * 1.2); padding: calc(var(--u) * .9) calc(var(--u) * 1.2) calc(var(--u) * .9) calc(var(--u) * 1.8); }
+  .cta p { margin: 0; font-weight: 700; font-size: calc(var(--u) * 1.3); line-height: 1.3; max-width: calc(var(--u) * 30); }
+  .cta p b { display: block; font-style: italic; font-weight: 900; font-stretch: 125%; text-transform: uppercase; font-size: calc(var(--u) * 1.7); }
+  .qr { width: calc(var(--u) * 7.5); height: calc(var(--u) * 7.5); flex: none; }
+  .qr img, .qr canvas { width: 100% !important; height: 100% !important; display: block; }
+
+  /* Demo ribbon + start overlay */
+  .ribbon { position: absolute; z-index: 5; left: 50%; top: 0; transform: translateX(-50%); background: var(--gold); color: var(--ink);
+    font-weight: 900; font-size: calc(var(--u) * 1.15); padding: calc(var(--u) * .35) calc(var(--u) * 1.6);
+    border-radius: 0 0 calc(var(--u) * .8) calc(var(--u) * .8); text-transform: uppercase; letter-spacing: .06em; }
+  .hint { position: fixed; z-index: 6; right: calc(var(--u) * 1.5); bottom: calc(var(--u) * 1.5); background: rgba(0,0,0,.6);
+    color: #fff; border: 0; border-radius: 999px; padding: 10px 16px; font: 700 14px/1 "Archivo", sans-serif; cursor: pointer; transition: opacity .4s; }
+  body.idle .hint { opacity: 0; pointer-events: none; }
+
+  .center { height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 24px; gap: 18px; }
+  .center h1 { margin: 0; font-size: clamp(28px, 5vw, 64px); }
+  .center p { color: var(--muted); font-size: clamp(16px, 1.8vw, 24px); max-width: 900px; margin: 0; line-height: 1.45; }
+  .center a { color: var(--gold); }
+  .center a.btn { color: var(--ink); }
+  .btn { display: inline-block; background: var(--gold); color: var(--ink); font-weight: 900; text-decoration: none; border-radius: 999px; padding: 14px 24px; font-size: 18px; }
+
+  /* Small / portrait screens (e.g. showing it on a phone) */
+  @media (max-aspect-ratio: 1/1) {
+    body { overflow: auto; }
+    .screen { height: auto; min-height: 100vh; }
+    .screen { padding: 16px; gap: 16px; --u: 3.4vw; }
+    .top { flex-wrap: wrap; gap: 10px; }
+    .track { flex-basis: 100%; padding-left: 0; border-left: 0; }
+    .track h1 { white-space: normal; overflow-wrap: anywhere; font-size: calc(var(--u) * 2.3); }
+    .screen { width: 100%; overflow-x: hidden; }
+    .brand span { font-size: calc(var(--u) * 2.2); }
+    .clock { display: none; }
+    .ribbon { position: static; transform: none; border-radius: 8px; text-align: center; }
+    .main { grid-template-columns: minmax(0, 1fr); }
+    .col, .col.right { grid-template-rows: auto; }
+    .rows { grid-template-rows: none; grid-auto-rows: calc(var(--u) * 4.4); }
+    .row .time, .latest .row .time, .season .row .time { font-size: calc(var(--u) * 1.9); }
+    .stripe { display: none; }
+    .bottom { flex-wrap: wrap; }
+    .cta { margin-left: 0; width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div id="app"><div class="center"><p>Laddar…</p></div></div>
+<button class="hint" id="fs" type="button">Helskärm ⛶</button>
+<script>
+// Clubhouse screen: maxvarv.se/skarm/?id=<track id>
+//   ?demo=1          example data (made-up riders) – to show clubs how it looks
+//   ?id=…&demo=1     the real track's name with example data
+//   ?bana=<n>        always show course n (1, 2 …) instead of rotating
+// Real data comes from the Supabase function club_screen (only riders who
+// turned on "Visa mina varvtider", first name + initial). Refreshes every 30 s.
+(function () {
+  var SUPABASE = "https://xhxugrpbypzushqkknnd.supabase.co";
+  var KEY = "sb_publishable_RBqx84SpN7z1IBwbItBtDA_05goMtyP";
+  var REFRESH_MS = 30000, ROTATE_MS = 20000;
+  var VEHICLES = { enduro: "Enduro", motocross: "Motocross", snowmobile: "Skoter", atv: "ATV" };
+  var q = new URLSearchParams(location.search);
+  var id = q.get("id") || "";
+  var demo = q.get("demo") === "1";
+  var fixedCourse = parseInt(q.get("bana") || "0", 10) || 0;
+  var app = document.getElementById("app");
+
+  var data = null, courseIdx = 0, seenLatest = {}, lastRotate = Date.now();
+
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function lapTime(s) {
+    if (s == null) return "–";
+    var m = Math.floor(s / 60), r = s - m * 60;
+    var sec = r.toFixed(1); if (r < 10) sec = "0" + sec;
+    return (m > 0 ? m + ":" + sec : r.toFixed(1)).replace(".", ",");
+  }
+  function ago(iso) {
+    var d = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+    if (d < 60) return "nyss";
+    if (d < 3600) return Math.floor(d / 60) + " min";
+    return new Date(iso).toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" });
+  }
+  function loadScript(src) {
+    return new Promise(function (ok, bad) { var s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); });
+  }
+
+  // ---- Demo data ------------------------------------------------------------
+  var DEMO_RIDERS = [
+    ["Alex N.", "enduro", 252], ["Sara L.", "enduro", 259], ["Johan K.", "motocross", 263], ["Emma B.", "enduro", 271],
+    ["Viktor H.", "enduro", 268], ["Linnea S.", "enduro", 281], ["Oskar P.", "motocross", 276], ["Elias W.", "enduro", 289],
+    ["Maja F.", "enduro", 297], ["Noah J.", "enduro", 302], ["Ida M.", "enduro", 312], ["Leo A.", "motocross", 285]
+  ];
+  var demoLaps = [];
+  function demoLap(rider, endedAt) {
+    var base = rider[2], t = base + Math.random() * 22 - 4;
+    return { name: rider[0], vehicle: rider[1], seconds: Math.round(t * 10) / 10, at: new Date(endedAt).toISOString() };
+  }
+  function seedDemo() {
+    var now = Date.now();
+    for (var i = 0; i < 46; i++) {
+      var r = DEMO_RIDERS[Math.floor(Math.random() * 9)];
+      demoLaps.push(demoLap(r, now - (46 - i) * 95000 - Math.random() * 40000));
+    }
+  }
+  function demoData(base) {
+    var best = {}, counts = {};
+    demoLaps.forEach(function (l) {
+      counts[l.name] = (counts[l.name] || 0) + 1;
+      if (!best[l.name] || l.seconds < best[l.name].seconds) best[l.name] = l;
+    });
+    var lapNo = {};
+    var latest = demoLaps.slice(-8).reverse().map(function (l) { return { name: l.name, vehicle: l.vehicle, seconds: l.seconds, at: l.at }; });
+    var today = Object.keys(best).map(function (n) { var b = best[n]; return { name: n, vehicle: b.vehicle, seconds: b.seconds, laps: counts[n], at: b.at }; })
+      .sort(function (a, b) { return a.seconds - b.seconds; }).slice(0, 10);
+    var season = [["Alex N.", 246.3], ["Johan K.", 249.8], ["Sara L.", 251.2], ["Viktor H.", 257.9], ["Emma B.", 262.4]]
+      .map(function (s, i) { return { name: s[0], vehicle: i === 1 ? "motocross" : "enduro", seconds: s[1] }; });
+    var mx = demoLaps.filter(function (l) { return l.vehicle === "motocross"; });
+    return {
+      name: (base && base.name) || "Exempelbanan",
+      club: (base && base.club) || "Maxvarv MK",
+      status: (base && base.status) || "open",
+      status_note: null,
+      courses: [
+        { name: "Enduroslingan", riders_today: Object.keys(counts).length + 3, laps_today: demoLaps.length + 11, today: today, latest: latest, season: season },
+        { name: "Crossbanan", riders_today: 4, laps_today: mx.length + 9,
+          today: today.filter(function (r) { return r.vehicle === "motocross"; }).map(function (r) { return Object.assign({}, r, { seconds: Math.round((r.seconds - 150) * 10) / 10 }); }),
+          latest: latest.filter(function (r) { return r.vehicle === "motocross"; }).map(function (r) { return Object.assign({}, r, { seconds: Math.round((r.seconds - 150) * 10) / 10 }); }),
+          season: [{ name: "Johan K.", vehicle: "motocross", seconds: 98.4 }, { name: "Leo A.", vehicle: "motocross", seconds: 101.7 }, { name: "Oskar P.", vehicle: "motocross", seconds: 104.2 }] }
+      ]
+    };
+  }
+  var demoBase = null;
+  function demoTick() {
+    var r = DEMO_RIDERS[Math.floor(Math.random() * DEMO_RIDERS.length)];
+    demoLaps.push(demoLap(r, Date.now()));
+    data = demoData(demoBase); render();
+  }
+
+  // ---- Real data ---------------------------------------------------------------
+  function rpc(name, body) {
+    return fetch(SUPABASE + "/rest/v1/rpc/" + name, {
+      method: "POST", headers: { "apikey": KEY, "Content-Type": "application/json" }, body: JSON.stringify(body)
+    }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); });
+  }
+  // Until club_screen exists everywhere, fall back to the track page data
+  // (season top list only).
+  function fromPublicSpot(s) {
+    return { name: s.name, club: s.club, status: s.status, status_note: s.status_note,
+      courses: (s.courses || []).map(function (c) { return { name: c.name, today: [], latest: [], season: c.leaderboard || [], riders_today: null, laps_today: null }; }) };
+  }
+  function load() {
+    return rpc("club_screen", { p_spot: id }).catch(function () {
+      return rpc("public_spot", { p_spot: id }).then(fromPublicSpot);
+    }).then(function (d) {
+      if (!d || !d.name) { message("Banan hittades inte", "Kontrollera länken. Den ska se ut som maxvarv.se/skarm/?id=… – du hittar den på banans sida."); return; }
+      data = d; render();
+    }).catch(function () {
+      if (!data) message("Ingen anslutning", "Skärmen försöker igen om en stund.");
+    });
+  }
+
+  // ---- Rendering -------------------------------------------------------------------
+  function message(title, text, extra) {
+    app.textContent = "";
+    var c = el("div", "center");
+    var b = el("div", "brand"); var img = el("img"); img.src = "../assets/mark.png"; img.alt = ""; img.style.height = "64px"; b.appendChild(img);
+    var w = el("span", "disp"); w.innerHTML = 'MAX<span class="gold">VARV</span>'; w.style.fontSize = "34px"; b.appendChild(w);
+    c.appendChild(b);
+    c.appendChild(el("h1", "disp", title));
+    c.appendChild(el("p", null, text));
+    if (extra) c.appendChild(extra);
+    app.appendChild(c);
+  }
+
+  function rowsPanel(cls, title, sub, list, kind, emptyTitle, emptyText, max) {
+    var p = el("section", "panel " + cls);
+    var h = el("h2", "disp", title); if (sub) h.appendChild(el("small", null, sub)); p.appendChild(h);
+    if (!list || !list.length) {
+      var e = el("div", "empty"); e.appendChild(el("b", null, emptyTitle)); e.appendChild(document.createTextNode(emptyText)); p.appendChild(e);
+      return p;
+    }
+    var rows = el("div", "rows");
+    rows.style.setProperty("--n", String(max));
+    if (kind !== "today") p.classList.add("inline");
+    list = list.slice(0, max);
+    var fastest = list.reduce(function (m, r) { return Math.min(m, r.seconds); }, Infinity);
+    list.forEach(function (r, i) {
+      var row = el("div", "row");
+      var who = el("div", "who");
+      var name = el("b", null, r.name || "Förare");
+      who.appendChild(name);
+      if (kind === "latest") {
+        row.appendChild(el("div", "pos disp", ago(r.at)));
+        if (todayBest != null && r.seconds <= todayBest) name.appendChild(el("span", "badge", "Dagens bästa!"));
+        who.appendChild(el("small", null, VEHICLES[r.vehicle] || ""));
+        var key = r.name + "|" + r.at;
+        if (seenLatest.__ready && !seenLatest[key]) row.classList.add("new");
+        seenLatest[key] = true;
+      } else {
+        if (i < 3) row.classList.add("p" + (i + 1));
+        row.appendChild(el("div", "pos disp num", String(i + 1)));
+        var bits = [VEHICLES[r.vehicle] || ""];
+        if (kind === "today" && r.laps) bits.push(r.laps + (r.laps === 1 ? " varv" : " varv"));
+        if (kind === "season" && r.at) bits.push(new Date(r.at).toLocaleDateString("sv-SE", { day: "numeric", month: "short" }));
+        who.appendChild(el("small", null, bits.filter(Boolean).join(" · ")));
+      }
+      row.appendChild(who);
+      row.appendChild(el("div", "time disp num", lapTime(r.seconds)));
+      rows.appendChild(row);
+    });
+    p.appendChild(rows);
+    return p;
+  }
+
+  var todayBest = null, qrDone = false;
+  function render() {
+    if (!data) return;
+    var courses = data.courses || [];
+    app.textContent = "";
+    var s = el("div", "screen");
+    s.appendChild(el("div", "stripe")); s.appendChild(el("div", "stripe s2"));
+    if (demo) s.appendChild(el("div", "ribbon", "Exempel – påhittade förare och tider"));
+
+    // Top bar
+    var top = el("header", "top");
+    var brand = el("div", "brand"); var img = el("img"); img.src = "../assets/mark.png"; img.alt = ""; brand.appendChild(img);
+    var w = el("span", "disp"); w.innerHTML = 'MAX<span class="gold">VARV</span>'; brand.appendChild(w); top.appendChild(brand);
+    var tr = el("div", "track");
+    tr.appendChild(el("h1", "disp", data.name));
+    var sub = el("div", "sub");
+    if (data.club) sub.appendChild(el("span", null, data.club));
+    var st = data.status === "open" ? ["open", "Öppet"] : data.status === "closed" ? ["closed", "Stängt"] : null;
+    if (st) { var pill = el("span", "pill " + st[0]); pill.appendChild(el("span", "dot")); pill.appendChild(document.createTextNode(st[1])); sub.appendChild(pill); }
+    var live = el("span", "pill live"); live.appendChild(el("span", "dot")); live.appendChild(document.createTextNode("Varvtider via GPS")); sub.appendChild(live);
+    tr.appendChild(sub); top.appendChild(tr);
+    var clock = el("div", "clock"); clock.id = "clock"; top.appendChild(clock);
+    s.appendChild(top);
+
+    if (!courses.length) {
+      var e = el("div", "panel"); e.style.position = "relative"; e.style.zIndex = 1;
+      var em = el("div", "empty");
+      em.appendChild(el("b", null, "Klubben har inte satt ut start/mål ännu"));
+      em.appendChild(document.createTextNode("När klubben har satt ut en start/mål-linje i Maxvarv-appen räknas varvtiderna automatiskt och visas här."));
+      e.appendChild(em); s.appendChild(e);
+    } else {
+      if (fixedCourse) courseIdx = Math.min(fixedCourse, courses.length) - 1;
+      if (courseIdx >= courses.length) courseIdx = 0;
+      var c = courses[courseIdx];
+      todayBest = (c.today && c.today.length) ? c.today[0].seconds : null;
+
+      var main = el("div", "main");
+      var left = el("div", "col");
+      left.appendChild(rowsPanel("today", "Dagens bästa", "bästa varv per förare idag", c.today, "today",
+        "Inga varv idag ännu", "Kör över start/mål med Maxvarv – första varvet visas här.", 8));
+      main.appendChild(left);
+      var right = el("div", "col right");
+      right.appendChild(rowsPanel("latest", "Senaste varven", null, (c.latest || []), "latest",
+        "Väntar på första varvet", "Varven dyker upp här när förarna laddat upp sina pass.", 4));
+      right.appendChild(rowsPanel("season", "Säsongens topp 5", String(new Date().getFullYear()), c.season, "season",
+        "Ingen topplista ännu", "Säsongens snabbaste varv visas här.", 5));
+      main.appendChild(right);
+      s.appendChild(main);
+
+      // Bottom bar
+      var bottom = el("footer", "bottom");
+      var cn = el("div");
+      cn.appendChild(el("div", "course-name disp", c.name || "Banan"));
+      if (courses.length > 1) {
+        var dots = el("div", "dots");
+        courses.forEach(function (_, i) { dots.appendChild(el("i", i === courseIdx ? "on" : null)); });
+        cn.appendChild(dots);
+      }
+      bottom.appendChild(cn);
+      if (c.riders_today != null) {
+        var s1 = el("div", "stat"); s1.appendChild(el("b", "disp num", String(c.riders_today))); s1.appendChild(el("small", null, "Förare idag")); bottom.appendChild(s1);
+        var s2 = el("div", "stat"); s2.appendChild(el("b", "disp num", String(c.laps_today))); s2.appendChild(el("small", null, "Varv idag")); bottom.appendChild(s2);
+      }
+      var cta = el("div", "cta");
+      var cp = el("p"); cp.appendChild(el("b", null, "Vill du synas här?"));
+      cp.appendChild(document.createTextNode("Ladda ner Maxvarv, kör med mobil eller klocka och slå på ”Visa mina varvtider”."));
+      cta.appendChild(cp);
+      var qr = el("div", "qr"); qr.id = "qr"; cta.appendChild(qr);
+      bottom.appendChild(cta);
+      s.appendChild(bottom);
+    }
+    app.appendChild(s);
+    seenLatest.__ready = true;
+    tickClock();
+    drawQr();
+  }
+
+  // The QR code library loads from cdnjs only when the screen is shown (same
+  // as the poster on the track page).
+  var qrLib = null;
+  function drawQr() {
+    var box = document.getElementById("qr"); if (!box) return;
+    if (!qrLib) qrLib = loadScript("https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js");
+    qrLib.then(function () {
+      box.textContent = "";
+      new QRCode(box, { text: "https://maxvarv.se/", width: 300, height: 300, colorDark: "#0a1847", correctLevel: QRCode.CorrectLevel.M });
+    }).catch(function () { box.style.display = "none"; });
+  }
+
+  function tickClock() {
+    var c = document.getElementById("clock"); if (!c) return;
+    var now = new Date();
+    c.innerHTML = "";
+    c.appendChild(el("b", "disp num", now.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" })));
+    c.appendChild(el("small", null, now.toLocaleDateString("sv-SE", { weekday: "long", day: "numeric", month: "long" })));
+  }
+  setInterval(tickClock, 10000);
+
+  // Rotate between courses (motocross track, enduro loop …).
+  setInterval(function () {
+    if (!data || fixedCourse) return;
+    var n = (data.courses || []).length;
+    if (n > 1 && Date.now() - lastRotate >= ROTATE_MS) { courseIdx = (courseIdx + 1) % n; lastRotate = Date.now(); render(); }
+  }, 1000);
+
+  // Full screen + keep the TV awake + hide the mouse pointer.
+  var fs = document.getElementById("fs");
+  fs.addEventListener("click", function () {
+    var d = document.documentElement;
+    if (!document.fullscreenElement && d.requestFullscreen) d.requestFullscreen().catch(function () {});
+    else if (document.exitFullscreen) document.exitFullscreen();
+  });
+  var wake = null;
+  function keepAwake() { if (navigator.wakeLock && document.visibilityState === "visible") navigator.wakeLock.request("screen").then(function (w) { wake = w; }).catch(function () {}); }
+  document.addEventListener("visibilitychange", keepAwake); keepAwake();
+  var idleT = null;
+  function active() { document.body.classList.remove("idle"); clearTimeout(idleT); idleT = setTimeout(function () { document.body.classList.add("idle"); }, 4000); }
+  ["mousemove", "touchstart", "keydown"].forEach(function (ev) { document.addEventListener(ev, active, { passive: true }); }); active();
+
+  // ---- Start ---------------------------------------------------------------------
+  var valid = /^[0-9a-f-]{36}$/i.test(id);
+  if (demo) {
+    seedDemo();
+    var start = function () { data = demoData(demoBase); render(); setInterval(demoTick, 9000); };
+    if (valid) rpc("public_spot", { p_spot: id }).then(function (s) { demoBase = s; }).catch(function () {}).then(start);
+    else start();
+  } else if (valid) {
+    load(); setInterval(load, REFRESH_MS);
+  } else {
+    var a = el("a", "btn", "Se ett exempel"); a.href = "?demo=1";
+    message("Klubbstugeskärm", "Visa banans varvtider på en TV i klubbstugan – dagens bästa, senaste varven och säsongens topplista. Öppna länken från er banas sida på maxvarv.se, eller se hur det ser ut:", a);
+  }
+})();
+</script>
+</body>
+</html>

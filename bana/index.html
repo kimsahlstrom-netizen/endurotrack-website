@@ -78,6 +78,7 @@
   .follow p { margin: 6px 0 0; color: var(--muted-on-ink); }
   .follow .muted-small { font-size: 13px; }
   .club-tools { text-align: center; margin-top: 18px; font-size: 14px; color: var(--muted); }
+  .club-tools a { color: var(--gold-text); font-weight: 700; }
   .club-tools button { background: none; border: 0; color: var(--gold-text); font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; padding: 0; }
   .vip { display: inline-flex; align-items: center; gap: 6px; margin-left: 8px; background: var(--gold); color: var(--ink); border-radius: 6px;
     padding: 4px 12px; transform: skewX(-10deg); font-size: 13px; vertical-align: top; }
@@ -546,6 +547,11 @@
       }).catch(function () { print.textContent = "Kunde inte skapa QR-koden"; });
     });
     tools.appendChild(print);
+    // Clubhouse screen (maxvarv.se/skarm): lap times on a TV in the clubhouse.
+    tools.appendChild(document.createTextNode(" · "));
+    var screenLink = el("a", null, "Visa varvtiderna på en TV i klubbstugan");
+    screenLink.href = "../skarm/?id=" + encodeURIComponent(s.id);
+    tools.appendChild(screenLink);
     main.appendChild(tools);
 
     page.appendChild(main);
