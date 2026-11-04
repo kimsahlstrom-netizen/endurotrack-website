@@ -158,11 +158,12 @@
 //   ?id=…&demo=1     the real track's name with example data
 //   ?bana=<n>        always show course n (1, 2 …) instead of rotating
 // Real data comes from the Supabase function club_screen (only riders who
-// turned on "Visa mina varvtider", first name + initial). Refreshes every 30 s.
+// turned on "Visa mina varvtider", first name + initial). Refreshes every 5 s.
 (function () {
   var SUPABASE = "https://xhxugrpbypzushqkknnd.supabase.co";
   var KEY = "sb_publishable_RBqx84SpN7z1IBwbItBtDA_05goMtyP";
-  var REFRESH_MS = 30000, ROTATE_MS = 20000;
+  // Live laps (sent from the watch/phone during the ride) show up within 5 s.
+  var REFRESH_MS = 5000, ROTATE_MS = 20000;
   var VEHICLES = { enduro: "Enduro", motocross: "Motocross", snowmobile: "Skoter", atv: "ATV" };
   var q = new URLSearchParams(location.search);
   var id = q.get("id") || "";
