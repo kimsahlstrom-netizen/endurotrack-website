@@ -401,13 +401,24 @@
           var pts = [[s.latitude, s.longitude]];
           courses.forEach(function (c) {
             // Start/finish: laps count within 20 m of this point.
-            L.circle([c.gate_lat, c.gate_lon], { radius: 20, color: "#0a1847", weight: 3, dashArray: "6 5", fillColor: "#ffffff", fillOpacity: 0.5 }).addTo(lmap);
+            // Stage ("Sträcka"): separate start and finish.
+            var stage = c.finish_lat != null && c.finish_lon != null;
+            L.circle([c.gate_lat, c.gate_lon], { radius: 20, color: stage ? "#1f8f3a" : "#0a1847", weight: 3, dashArray: "6 5", fillColor: "#ffffff", fillOpacity: 0.5 }).addTo(lmap);
             var popup = el("div");
             if (c.name) popup.appendChild(el("strong", null, c.name + " "));
-            popup.appendChild(document.createTextNode("Start/mål – varvtiderna mäts här"));
-            L.marker([c.gate_lat, c.gate_lon], { icon: L.divIcon({ className: "", html: '<div style="font-size:26px;line-height:1;transform:translate(-4px,-22px)">🏁</div>' }) })
+            popup.appendChild(document.createTextNode(stage ? "Start – tiden startar här" : "Start/mål – varvtiderna mäts här"));
+            L.marker([c.gate_lat, c.gate_lon], { icon: L.divIcon({ className: "", html: '<div style="font-size:26px;line-height:1;transform:translate(-4px,-22px)">' + (stage ? "🟢" : "🏁") + '</div>' }) })
               .addTo(lmap).bindPopup(popup);
             pts.push([c.gate_lat, c.gate_lon]);
+            if (stage) {
+              L.circle([c.finish_lat, c.finish_lon], { radius: 20, color: "#0a1847", weight: 3, dashArray: "6 5", fillColor: "#ffffff", fillOpacity: 0.5 }).addTo(lmap);
+              var fp = el("div");
+              if (c.name) fp.appendChild(el("strong", null, c.name + " "));
+              fp.appendChild(document.createTextNode("Mål – tiden stoppas här"));
+              L.marker([c.finish_lat, c.finish_lon], { icon: L.divIcon({ className: "", html: '<div style="font-size:26px;line-height:1;transform:translate(-4px,-22px)">🏁</div>' }) })
+                .addTo(lmap).bindPopup(fp);
+              pts.push([c.finish_lat, c.finish_lon]);
+            }
           });
           lmap.fitBounds(L.latLngBounds(pts).pad(0.6), { maxZoom: 17 });
         }
@@ -473,7 +484,7 @@
       var lc = el("section", "card");
       lc.appendChild(el("h2", "display", "Snabbaste varv " + new Date().getFullYear()));
       courses.forEach(function (c) {
-        if (courses.length > 1 || c.name) lc.appendChild(el("h3", null, "🏁 " + (c.name || "")));
+        if (courses.length > 1 || c.name) lc.appendChild(el("h3", null, (c.finish_lat != null ? "➜ " : "🏁 ") + (c.name || "")));
         if ((c.leaderboard || []).length) {
           var ol = el("ol", "lb");
           c.leaderboard.forEach(function (r, i) {
