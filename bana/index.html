@@ -399,7 +399,20 @@
           .addTo(lmap).bindPopup(s.name);
         if (courses.length) {
           var pts = [[s.latitude, s.longitude]];
-          courses.forEach(function (c) {
+          var pathColors = ["#ffd200", "#ff5a1f", "#36c5f0", "#b45cff", "#ffffff"];
+          courses.forEach(function (c, ci) {
+            // Course path ("spårlinje"): the way the lap must go. Laps that
+            // take a shortcut or ride another loop do not count.
+            if ((c.path || []).length > 1) {
+              var stageEnd = c.finish_lat != null && c.finish_lon != null;
+              var line = [[c.gate_lat, c.gate_lon]].concat(c.path, [stageEnd ? [c.finish_lat, c.finish_lon] : [c.gate_lat, c.gate_lon]]);
+              var lp = el("div");
+              if (c.name) lp.appendChild(el("strong", null, c.name + " "));
+              lp.appendChild(document.createTextNode("Spårlinje – varvet räknas bara om man följer den"));
+              L.polyline(line, { color: "#0a1847", weight: 7, opacity: 0.55 }).addTo(lmap);
+              L.polyline(line, { color: pathColors[ci % pathColors.length], weight: 4, opacity: 0.95 }).addTo(lmap).bindPopup(lp);
+              pts = pts.concat(c.path);
+            }
             // Start/finish: laps count within 20 m of this point.
             // Stage ("Sträcka"): separate start and finish.
             var stage = c.finish_lat != null && c.finish_lon != null;
