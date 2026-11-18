@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Konto aktiverat – Maxvarv</title>
+<meta name="description" content="Spela in enduro, motocross, snöskoter och ATV på iPhone och Apple Watch. Statistik, vänner och privata rutter. Made in Sweden.">
+<meta name="robots" content="noindex">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#0a1847">
+<meta property="og:title" content="Konto aktiverat – Maxvarv">
+<meta property="og:description" content="Spela in enduro, motocross, snöskoter och ATV på iPhone och Apple Watch. Statistik, vänner och privata rutter. Made in Sweden.">
+<meta property="og:image" content="https://maxvarv.se/assets/app-icon.png">
+<link rel="icon" type="image/png" href="/assets/favicon.png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="preload" href="/assets/fonts/Archivo-Italic.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/style.css?v=20261013b">
+<style>[hidden]{display:none!important}</style>
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="/" aria-label="Maxvarv">
+      <img src="/assets/mark.png" alt="" width="44" height="44">
+      <span class="display">Max<span class="gold">varv</span></span>
+    </a>
+    <nav class="nav" aria-label="Main">
+      <a href="/#funktioner">Funktioner</a>
+      <a href="/#fordon">Fordon</a>
+      <a href="/integritet/">Integritet</a>
+      <span class="lang" aria-label="Språk / Language"><strong>SV</strong><a href="/en/" hreflang="en">EN</a></span>
+    </nav>
+  </div>
+</header>
+<main>
+<section class="legal"><div class="wrap">
+  <div id="ok">
+    <h1 class="display">Klart! Ditt konto är aktiverat</h1>
+    <p>Din e-post är bekräftad. Öppna appen Maxvarv i mobilen och logga in med din e-post och ditt lösenord.</p>
+    <p id="open-wrap" hidden><a id="open-app" class="btn btn-gold" href="endurotrack://auth-callback">Öppna Maxvarv</a></p>
+    <p class="meta">Har du inte appen än? Hämta den i App Store (iPhone) eller Google Play (Android).</p>
+    <p class="meta" lang="en">Done! Your account is activated. Open the Maxvarv app on your phone and sign in.</p>
+  </div>
+  <div id="err" hidden>
+    <h1 class="display">Länken fungerar inte längre</h1>
+    <p>Bekräftelselänken har gått ut eller redan använts. Har du redan bekräftat kan du bara logga in i appen. Annars: öppna Maxvarv och försök logga in, så får du en ny länk – eller mejla <a href="mailto:hej@maxvarv.se">hej@maxvarv.se</a> så hjälper vi dig.</p>
+    <p class="meta" lang="en">This link has expired or was already used. If you already confirmed, just sign in in the app.</p>
+  </div>
+</div></section>
+<script>
+(function () {
+  // Supabase sends the rider here after confirming the email.
+  // ?code=... (PKCE) is handed on to the app only if the rider taps the
+  // button on their phone; nothing is stored or sent anywhere else.
+  var q = new URLSearchParams(location.search);
+  var h = new URLSearchParams(location.hash.replace(/^#/, ''));
+  var hasError = q.get('error') || h.get('error') || q.get('error_code') || h.get('error_code');
+  var code = q.get('code');
+  // Keep the one-time code out of the address bar and history.
+  if (location.search || location.hash) history.replaceState(null, '', location.pathname);
+  if (hasError) {
+    document.getElementById('ok').hidden = true;
+    document.getElementById('err').hidden = false;
+    return;
+  }
+  var phone = /Android|iPhone|iPod/i.test(navigator.userAgent);
+  if (phone && code) {
+    document.getElementById('open-app').href = 'endurotrack://auth-callback?code=' + encodeURIComponent(code);
+    document.getElementById('open-wrap').hidden = false;
+  }
+})();
+</script>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <span>© 2026 Maxvarv · Kim Sahlström, Sverige</span>
+    <nav aria-label="Footer">
+      <a href="/integritet/">Integritetspolicy</a>
+      <a href="/villkor/">Användarvillkor</a>
+      <a href="/radera-konto/">Radera konto</a>
+      <a href="mailto:hej@maxvarv.se">hej@maxvarv.se</a>
+      <a href="https://www.instagram.com/maxvarvapp/" rel="noopener">Instagram</a>
+      <a href="https://www.facebook.com/maxvarv" rel="noopener">Facebook</a>
+    </nav>
+  </div>
+</footer>
+</body>
+</html>
