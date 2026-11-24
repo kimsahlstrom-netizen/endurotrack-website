@@ -170,6 +170,7 @@
   var SUPABASE = "https://xhxugrpbypzushqkknnd.supabase.co";
   var KEY = "sb_publishable_RBqx84SpN7z1IBwbItBtDA_05goMtyP";
   var APP_STORE = "https://apps.apple.com/se/app/maxvarv/id6820570956";
+  var GOOGLE_PLAY = "https://play.google.com/store/apps/details?id=com.kimsahlstrom.endurotrack&hl=sv";
   var page = document.getElementById("page");
   var id = new URLSearchParams(location.search).get("id") || "";
   var KINDS = { training: "Träning", competition: "Tävling", work_day: "Jobbardag", other: "Händelse" };
@@ -553,7 +554,7 @@
     f.appendChild(ft);
     var fb = el("div");
     fb.appendChild(button("Ladda ner för iPhone", APP_STORE, "btn-gold"));
-    fb.appendChild(el("p", "muted-small", "Android kommer snart."));
+    fb.appendChild(button("Ladda ner för Android", GOOGLE_PLAY, "btn-gold"));
     f.appendChild(fb);
     main.appendChild(f);
 
