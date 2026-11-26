@@ -12,7 +12,7 @@
 <link rel="preload" href="../assets/fonts/Archivo-Italic.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="../assets/style.css?v=20261125">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
-<link rel="stylesheet" href="webb.css?v=20261126">
+<link rel="stylesheet" href="webb.css?v=20261126b">
 </head>
 <body>
 <header class="site-header">
@@ -48,6 +48,7 @@
     <div class="tabs" role="tablist">
       <button class="tab" data-tab="feed" role="tab">Flöde</button>
       <button class="tab" data-tab="mine" role="tab">Mina pass</button>
+      <button class="tab" data-tab="garage" role="tab">Garage</button>
       <button class="tab" data-tab="riders" role="tab">Hitta förare</button>
     </div>
 
@@ -58,6 +59,11 @@
 
     <div id="tab-mine" class="tabpane" hidden>
       <div id="mineList" class="list"></div>
+    </div>
+
+    <div id="tab-garage" class="tabpane" hidden>
+      <p class="muted">Samma garage som i appen – det du ändrar här syns direkt i appen och tvärtom. Lägg till och ändra motorcyklar i appen.</p>
+      <div id="garageList" class="list"></div>
     </div>
 
     <div id="tab-riders" class="tabpane" hidden>
@@ -95,6 +101,6 @@
 </footer>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<script src="webb.js?v=20261126"></script>
+<script src="webb.js?v=20261126b"></script>
 </body>
 </html>

@@ -58,3 +58,32 @@ form .btn { width: 100%; border: 0; cursor: pointer; font: inherit; margin-top: 
   .map { height: 300px; }
   .stats.big .stat b { font-size: 20px; }
 }
+
+/* Garage */
+.bike { background: var(--card); border-radius: 16px; padding: 16px; box-shadow: 0 1px 0 var(--line); }
+.bike h2 { font-size: 22px; margin: 0; }
+.bikehead { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.section { margin-top: 18px; }
+.sectionhead { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.sectionhead h3 { margin: 0; font-size: 13px; font-weight: 900; letter-spacing: 1.2px; color: var(--gold-text); }
+.smallbtn { border: 2px solid var(--ink); background: transparent; color: var(--ink); font: inherit; font-weight: 800; font-size: 13px; padding: 4px 12px; border-radius: 999px; cursor: pointer; }
+.smallbtn.solid { background: var(--ink); color: var(--gold); }
+.smallbtn.danger { border-color: #b3261e; color: #b3261e; }
+.entry { border-top: 1px solid var(--line); padding: 10px 2px; }
+.entryhead { display: flex; justify-content: space-between; gap: 8px; font-weight: 800; }
+.entry p { margin: 4px 0 0; white-space: pre-wrap; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.chip { background: var(--asphalt); border-radius: 999px; padding: 2px 10px; font-size: 13px; font-weight: 700; }
+.photos { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.photos img { width: 84px; height: 84px; object-fit: cover; border-radius: 10px; }
+.editor { background: var(--asphalt); border-radius: 14px; padding: 14px; margin-top: 10px; }
+.editor label { margin: 8px 0; }
+.editor textarea { display: block; width: 100%; margin-top: 6px; padding: 10px 12px; font: inherit; border: 2px solid var(--line); border-radius: 12px; min-height: 70px; }
+.checks { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 4px 12px; margin: 8px 0; }
+.checks label { display: flex; align-items: center; gap: 6px; font-weight: 600; margin: 0; }
+.checks input { width: auto; margin: 0; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0 12px; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.row .btn { width: auto; margin: 0; }
+.setupvals { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 2px 14px; margin-top: 6px; font-size: 14px; }
+.setupvals span { color: var(--muted); }
