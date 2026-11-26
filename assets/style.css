@@ -80,6 +80,8 @@ a:hover { color: var(--gold-text); }
 .nav { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 20px; }
 .nav a { color: #fff; text-decoration: none; font-weight: 700; font-size: 15px; padding: 10px 0; }
 .nav a:hover { color: var(--gold); }
+.nav a.nav-login { color: var(--ink); background: var(--gold); padding: 6px 14px; border-radius: 999px; }
+.nav a.nav-login:hover { color: var(--ink); background: #fff; }
 .lang { display: inline-flex; gap: 4px; }
 .lang a, .lang strong { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; font-weight: 900; font-style: italic; }
 .lang strong { background: #fff; color: var(--ink); }
