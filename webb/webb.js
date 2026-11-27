@@ -21,7 +21,7 @@
   var lastTab = "feed";
 
   var RIDE_COLUMNS = "id, user_id, title, started_at, duration_seconds, distance_meters, average_speed_kmh, " +
-    "max_speed_kmh, ascent_meters, share_route, activity_type, note, laps, visibility";
+    "max_speed_kmh, ascent_meters, share_route, activity_type, note, video_id, laps, visibility";
 
   function $(id) { return document.getElementById(id); }
   function el(tag, cls, text) {
@@ -260,12 +260,180 @@
     top.appendChild(who);
     head.appendChild(top);
     if (r.title) head.appendChild(el("h1", "display h2", r.title));
-    if (r.note) head.appendChild(el("p", null, r.note));
+    renderPost(r);
+    renderSocial(r);
 
     var stats = $("detailStats"); stats.textContent = "";
     rideStats(r, h, stats);
     renderLaps(r);
     await renderMap(r);
+  }
+
+  // ---------- ride post: text, photos, YouTube clip (same fields as the app) ----------
+  // The 11-character video id from a pasted link (youtu.be, watch?v=, shorts, live, embed),
+  // same rule as the app's YouTubeVideo.id.
+  function youTubeId(raw) {
+    var text = (raw || "").trim();
+    if (!text) return null;
+    var u;
+    try { u = new URL(/^http/i.test(text) ? text : "https://" + text); } catch (e) { return null; }
+    var host = u.hostname.toLowerCase();
+    var parts = u.pathname.split("/").filter(Boolean);
+    var c = null;
+    if (host === "youtu.be" || host === "www.youtu.be") c = parts[0];
+    else if (host === "youtube.com" || /\.youtube\.com$/.test(host)) {
+      if (parts[0] === "watch") c = u.searchParams.get("v");
+      else if (parts.length >= 2 && ["shorts", "live", "embed", "v"].indexOf(parts[0]) >= 0) c = parts[1];
+    }
+    return c && /^[A-Za-z0-9_-]{11}$/.test(c) ? c : null;
+  }
+
+  function renderPost(r) {
+    var box = $("detailPost"); box.textContent = "";
+    if (r.note) box.appendChild(el("p", "note", r.note));
+    if (r.video_id) {
+      var a = el("a", "btn btn-ghost video", "▶ Se klippet på YouTube");
+      a.href = "https://youtu.be/" + encodeURIComponent(r.video_id); a.target = "_blank"; a.rel = "noopener";
+      box.appendChild(a);
+    }
+    var ph = el("div", "photos big"); box.appendChild(ph);
+    db.from("ride_photos").select("path, position").eq("ride_id", r.id).order("position").then(function (res) {
+      var paths = (res.data || []).map(function (x) { return x.path; });
+      if (!paths.length) return;
+      return db.storage.from("photos").createSignedUrls(paths, 3600).then(function (s) {
+        (s.data || []).forEach(function (x) {
+          if (!x.signedUrl) return;
+          var a = el("a"); a.href = x.signedUrl; a.target = "_blank"; a.rel = "noopener";
+          var img = el("img"); img.src = x.signedUrl; img.alt = "Bild från passet"; img.loading = "lazy";
+          a.appendChild(img); ph.appendChild(a);
+        });
+      });
+    });
+    if (r.user_id !== me) return;
+    var edit = el("button", "smallbtn", r.note || r.video_id ? "Ändra text och klipp" : "Skriv om passet / lägg till klipp");
+    edit.type = "button";
+    var slot = el("div");
+    box.appendChild(edit); box.appendChild(slot);
+    edit.addEventListener("click", function () { edit.hidden = true; postEditor(slot, r, function () { edit.hidden = false; }); });
+  }
+
+  function postEditor(slot, r, onClose) {
+    slot.textContent = "";
+    var f = el("form", "editor");
+    var nl = el("label", null, "Om passet");
+    var note = el("textarea"); note.maxLength = 2000; note.value = r.note || "";
+    note.placeholder = "Hur gick det? Bana, underlag, väder …";
+    nl.appendChild(note); f.appendChild(nl);
+    var vl = el("label", null, "YouTube-länk (valfritt)");
+    var video = el("input"); video.type = "url"; video.inputMode = "url"; video.placeholder = "https://youtu.be/…";
+    video.value = r.video_id ? "https://youtu.be/" + r.video_id : "";
+    vl.appendChild(video); f.appendChild(vl);
+    f.appendChild(el("p", "small muted", "Bilder lägger du till i appen."));
+    var err = el("p", "error"); f.appendChild(err);
+    var row = el("div", "row");
+    var save = el("button", "btn btn-gold", "Spara"); save.type = "submit";
+    var cancel = el("button", "smallbtn", "Avbryt"); cancel.type = "button";
+    row.appendChild(save); row.appendChild(cancel); f.appendChild(row);
+    slot.appendChild(f);
+    note.focus();
+    cancel.addEventListener("click", function () { slot.textContent = ""; onClose(); });
+    f.addEventListener("submit", async function (ev) {
+      ev.preventDefault();
+      err.textContent = "";
+      var link = video.value.trim();
+      var id = youTubeId(link);
+      if (link && !id) { err.textContent = "Det där ser inte ut som en YouTube-länk. Kopiera länken från Dela-knappen i YouTube."; return; }
+      var text = note.value.trim().slice(0, 2000);
+      save.disabled = true;
+      var res = await db.from("rides").update({ note: text || null, video_id: id }).eq("id", r.id).eq("user_id", me).select("id");
+      save.disabled = false;
+      if (res.error || !(res.data || []).length) { err.textContent = "Det gick inte att spara. Försök igen."; return; }
+      r.note = text || null; r.video_id = id;
+      renderPost(r);
+    });
+  }
+
+  // ---------- Ride On + comments (same tables as the app: ride_likes, ride_comments) ----------
+  var BLOCKED_PHRASES = ["kill yourself", "go kill yourself", "fuck you", "fucking idiot", "piece of shit"];
+
+  async function renderSocial(r) {
+    var box = $("detailSocial"); box.textContent = "";
+    var res = await Promise.all([
+      db.from("ride_likes").select("user_id").eq("ride_id", r.id),
+      db.from("ride_comments").select("id, user_id, body, created_at").eq("ride_id", r.id).order("created_at", { ascending: true })
+    ]);
+    var likes = (res[0].data || []).map(function (x) { return x.user_id; });
+    var comments = res[1].data || [];
+    await loadProfiles(Array.from(new Set(comments.map(function (c) { return c.user_id; }))));
+
+    var bar = el("div", "socialbar");
+    var liked = likes.indexOf(me) >= 0;
+    var count = likes.length;
+    var on = el("button", "rideon"); on.type = "button";
+    function paint() {
+      on.textContent = "👍 Ride On" + (count ? " · " + count : "");
+      on.classList.toggle("active", liked);
+      on.setAttribute("aria-pressed", liked ? "true" : "false");
+    }
+    paint();
+    if (r.user_id === me) on.disabled = true;
+    on.addEventListener("click", async function () {
+      on.disabled = true;
+      var q = liked
+        ? db.from("ride_likes").delete().eq("ride_id", r.id).eq("user_id", me)
+        : db.from("ride_likes").insert({ ride_id: r.id, user_id: me });
+      var out = await q;
+      if (!out.error) { liked = !liked; count += liked ? 1 : -1; paint(); }
+      on.disabled = false;
+    });
+    bar.appendChild(on);
+    bar.appendChild(el("span", "muted small", comments.length === 1 ? "1 kommentar" : comments.length + " kommentarer"));
+    box.appendChild(bar);
+
+    var list = el("div", "comments");
+    comments.forEach(function (c) { list.appendChild(commentRow(c)); });
+    box.appendChild(list);
+
+    var f = el("form", "commentform");
+    var t = el("textarea"); t.maxLength = 1000; t.placeholder = "Skriv en kommentar …"; t.required = true;
+    t.setAttribute("aria-label", "Kommentar");
+    var send = el("button", "btn btn-gold", "Skicka"); send.type = "submit";
+    var err = el("p", "error");
+    f.appendChild(t); f.appendChild(send); f.appendChild(err);
+    box.appendChild(f);
+    f.addEventListener("submit", async function (ev) {
+      ev.preventDefault();
+      err.textContent = "";
+      var body = t.value.trim();
+      if (!body) return;
+      var plain = body.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      if (BLOCKED_PHRASES.some(function (b) { return plain.indexOf(b) >= 0; })) {
+        err.textContent = "Kommentaren innehåller språk som inte är tillåtet i Maxvarv."; return;
+      }
+      send.disabled = true;
+      var out = await db.from("ride_comments").insert({ ride_id: r.id, user_id: me, body: body })
+        .select("id, user_id, body, created_at").single();
+      send.disabled = false;
+      if (out.error || !out.data) { err.textContent = "Det gick inte att skicka. Försök igen."; return; }
+      t.value = "";
+      list.appendChild(commentRow(out.data));
+      comments.push(out.data);
+      bar.lastChild.textContent = comments.length === 1 ? "1 kommentar" : comments.length + " kommentarer";
+    });
+  }
+
+  function commentRow(c) {
+    var p = profiles[c.user_id];
+    var row = el("div", "comment");
+    row.appendChild(avatar(p));
+    var body = el("div");
+    var head = el("div", "meta");
+    head.appendChild(el("b", null, c.user_id === me ? "Du" : displayName(p)));
+    head.appendChild(document.createTextNode(" · " + date(c.created_at)));
+    body.appendChild(head);
+    body.appendChild(el("p", null, c.body));
+    row.appendChild(body);
+    return row;
   }
 
   async function fetchRoute(rideId) {

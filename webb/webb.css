@@ -87,3 +87,19 @@ form .btn { width: 100%; border: 0; cursor: pointer; font: inherit; margin-top: 
 .row .btn { width: auto; margin: 0; }
 .setupvals { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 2px 14px; margin-top: 6px; font-size: 14px; }
 .setupvals span { color: var(--muted); }
+
+/* Ride post, Ride On and comments */
+.post .note { white-space: pre-wrap; margin: 8px 0; }
+.post .video { display: inline-block; margin: 6px 0; }
+.post .smallbtn { margin-top: 10px; }
+.photos.big img { width: 140px; height: 140px; }
+.social { margin-top: 22px; border-top: 1px solid var(--line); padding-top: 14px; }
+.socialbar { display: flex; align-items: center; gap: 12px; }
+.rideon { border: 2px solid var(--ink); background: transparent; color: var(--ink); font: inherit; font-weight: 800; padding: 8px 16px; border-radius: 999px; cursor: pointer; }
+.rideon.active { background: var(--gold); border-color: var(--gold); }
+.rideon:disabled { cursor: default; opacity: .75; }
+.comments { margin-top: 10px; }
+.comment { display: flex; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); }
+.comment p { margin: 2px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.commentform { margin-top: 10px; }
+.commentform textarea { display: block; width: 100%; padding: 10px 12px; font: inherit; border: 2px solid var(--line); border-radius: 12px; min-height: 60px; margin-bottom: 8px; }
